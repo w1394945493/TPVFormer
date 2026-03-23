@@ -92,6 +92,8 @@ class ImagePoint_NuScenes_vis(data.Dataset):
                 nusc_infos.extend(insert_items)
         
         self.nusc_infos = nusc_infos
+        #=========================================#
+        self.nusc_infos = self.nusc_infos[::80][:5]
         
         self.data_path = data_path
         self.lidarseg_path = data_path
@@ -122,7 +124,7 @@ class ImagePoint_NuScenes_vis(data.Dataset):
         points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8).reshape([-1, 1])
         points_label = np.vectorize(self.learning_map.__getitem__)(points_label)
         
-        lidar_path = info['lidar_path']
+        lidar_path = info['lidar_path'].replace('./data/nuscenes/',self.data_path)    
         points = np.fromfile(lidar_path, dtype=np.float32, count=-1).reshape([-1, 5])
 
         data_tuple = (imgs, img_metas, points[:, :3], points_label.astype(np.uint8))
@@ -170,7 +172,11 @@ class ImagePoint_NuScenes_vis(data.Dataset):
         cam_positions = []
         focal_positions = []
         for cam_type, cam_info in info['cams'].items():
-            image_paths.append(cam_info['data_path'])
+            # image_paths.append(cam_info['data_path'])
+            img_path = cam_info['data_path']
+            img_path = img_path.replace('./data/nuscenes/',self.data_path)
+            image_paths.append(img_path)
+            
             # obtain lidar to image transformation matrix
             lidar2cam_r = np.linalg.inv(cam_info['sensor2lidar_rotation'])
             lidar2cam_t = cam_info[

@@ -29,6 +29,34 @@
                      
             ],
             "console": "integratedTerminal"
-        }
+        },
+        {
+            "name": "occpancy demo",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/demo.py",
+            "args": [
+                "--py-config", "/vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/config/tpv04_occupancy_custom.py",
+                "--work-dir", "/vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/tpvformer/outpus/vis", 
+                "--save-path", "/vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/tpvformer/outpus/vis/occ_pred",
+                "--ckpt-path", "/c20250502/wangyushen/Weights/tpvformer/tpv04_occupancy_v2.pth",
+                     
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "lidarseg demo",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/demo.py",
+            "args": [
+                "--py-config", "/vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/config/tpv_lidarseg_custom.py",
+                "--work-dir", "/vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/tpvformer/outpus/vis2", 
+                "--save-path", "/vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/tpvformer/outpus/vis2/occ_pred",
+                "--ckpt-path", "/c20250502/wangyushen/Weights/tpvformer/tpv10_lidarseg_v2.pth",
+                     
+            ],
+            "console": "integratedTerminal"
+        },
     ]
 }

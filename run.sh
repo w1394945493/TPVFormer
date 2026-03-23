@@ -7,5 +7,19 @@ python /vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/eval.py \
 # todo eval occpancy
 python /vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/eval.py \
     --py-config /vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/config/tpv04_occupancy_custom.py \
-    --work-dir /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/tpvformer/outpus \ 
+    --work-dir /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/tpvformer/outpus \
+    --ckpt-path /c20250502/wangyushen/Weights/tpvformer/tpv04_occupancy_v2.pth 
+
+# vis occ pred
+python /vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/demo.py \
+    --py-config /vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/config/tpv04_occupancy_custom.py \
+    --work-dir /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/tpvformer/outpus/vis \
+    --save-path /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/tpvformer/outpus/vis/occ_pred \
     --ckpt-path /c20250502/wangyushen/Weights/tpvformer/tpv04_occupancy_v2.pth
+
+# vis lidarseg
+python /vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/demo.py \
+    --py-config /vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/config/tpv_lidarseg_custom.py \
+    --work-dir /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/tpvformer/outpus/vis2 \
+    --save-path /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/tpvformer/outpus/vis2/occ_pred \
+    --ckpt-path /c20250502/wangyushen/Weights/tpvformer/tpv10_lidarseg_v2.pth

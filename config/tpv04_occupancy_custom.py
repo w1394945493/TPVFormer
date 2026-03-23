@@ -97,6 +97,7 @@ model = dict(
             pc_range=point_cloud_range,
             num_points_in_pillar=num_points_in_pillar,
             return_intermediate=False, # 是否返回中间预测层
+            
             transformerlayers=dict(
                 type='TPVFormerLayer',
                 attn_cfgs=[

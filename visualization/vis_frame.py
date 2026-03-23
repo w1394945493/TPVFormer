@@ -70,7 +70,7 @@ def draw(
 
     if mode == 0:
         grid_coords = np.vstack([grid_coords.T, voxels.reshape(-1)]).T
-    
+        
         # draw a simple car at the middle
         # car_vox_range = np.array([
         #     [w//2 - 2 - 4, w//2 - 2 + 4],
@@ -282,6 +282,7 @@ if __name__ == "__main__":
              resolution, 
              grid.squeeze(0).cpu().numpy(), 
              pt_label.squeeze(-1),
+             
              frame_dir,
              img_metas['cam_positions'],
              img_metas['focal_positions'],
