@@ -45,7 +45,7 @@ class TPVFormerEncoder(TransformerLayerSequence):
         self.register_buffer('ref_3d_hw', ref_3d_hw)
         self.register_buffer('ref_3d_zh', ref_3d_zh)
         self.register_buffer('ref_3d_wz', ref_3d_wz)
-        
+        # 这里定义的是跨视图参考点：每个query同时和3个plane进行交互
         cross_view_ref_points = self.get_cross_view_ref_points(tpv_h, tpv_w, tpv_z, num_points_in_pillar_cross_view)
         self.register_buffer('cross_view_ref_points', cross_view_ref_points)
         self.num_points_cross_view = num_points_in_pillar_cross_view

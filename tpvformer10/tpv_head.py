@@ -81,14 +81,14 @@ class TPVFormerHead(BaseModule):
         device = mlvl_feats[0].device
 
         # tpv queries and pos embeds
-        tpv_queries_hw = self.tpv_embedding_hw.weight.to(dtype)
-        tpv_queries_zh = self.tpv_embedding_zh.weight.to(dtype)
+        tpv_queries_hw = self.tpv_embedding_hw.weight.to(dtype) # (40000 128)
+        tpv_queries_zh = self.tpv_embedding_zh.weight.to(dtype) # (3200 128)
         tpv_queries_wz = self.tpv_embedding_wz.weight.to(dtype)
         tpv_queries_hw = tpv_queries_hw.unsqueeze(0).repeat(bs, 1, 1)
         tpv_queries_zh = tpv_queries_zh.unsqueeze(0).repeat(bs, 1, 1)
         tpv_queries_wz = tpv_queries_wz.unsqueeze(0).repeat(bs, 1, 1)
 
-        tpv_pos_hw = self.positional_encoding(bs, device, 'z')
+        tpv_pos_hw = self.positional_encoding(bs, device, 'z') # 位置编码
         tpv_pos_zh = self.positional_encoding(bs, device, 'w')
         tpv_pos_wz = self.positional_encoding(bs, device, 'h')
         tpv_pos = [tpv_pos_hw, tpv_pos_zh, tpv_pos_wz]
@@ -100,8 +100,8 @@ class TPVFormerHead(BaseModule):
             bs, num_cam, c, h, w = feat.shape
             spatial_shape = (h, w)
             feat = feat.flatten(3).permute(1, 0, 3, 2) # num_cam, bs, hw, c
-            feat = feat + self.cams_embeds[:, None, None, :].to(dtype)
-            feat = feat + self.level_embeds[None, None, lvl:lvl+1, :].to(dtype)
+            feat = feat + self.cams_embeds[:, None, None, :].to(dtype) # self.cam_embeds: (6 128)
+            feat = feat + self.level_embeds[None, None, lvl:lvl+1, :].to(dtype) # self.level_embeds: (4 128)
             spatial_shapes.append(spatial_shape)
             feat_flatten.append(feat)
 
@@ -124,7 +124,7 @@ class TPVFormerHead(BaseModule):
             img_metas=img_metas,
         )
         
-        return tpv_embed
+        return tpv_embed # 0-(1 40000 128) 1-(1 3200 128) 2-(1 3200 128)
     
 
 from mmcv.cnn.bricks.transformer import POSITIONAL_ENCODING

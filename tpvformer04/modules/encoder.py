@@ -40,7 +40,8 @@ class TPVFormerEncoder(TransformerLayerSequence):
         self.register_buffer('ref_3d_hw', ref_3d_hw)
         self.register_buffer('ref_3d_zh', ref_3d_zh)
         self.register_buffer('ref_3d_wz', ref_3d_wz)
-        
+        # 这里定义的是2D参考点：每个query只在当前plane内做attention：3个plane之间几乎没有直接信息交换
+        # occ预测的TPVFormer中设计了2d参考点，lidarseg中没有设计该项
         ref_2d_hw = self.get_reference_points(tpv_h, tpv_w, dim='2d', bs=1, device='cpu')
         ref_2d_zh = self.get_reference_points(tpv_z, tpv_h, dim='2d', bs=1, device='cpu')
         ref_2d_wz = self.get_reference_points(tpv_w, tpv_z, dim='2d', bs=1, device='cpu')

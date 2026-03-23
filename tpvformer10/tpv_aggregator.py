@@ -63,19 +63,23 @@ class TPVAggregator(BaseModule):
             )
         
         if points is not None:
+            # todo-------------------------------------------------#
+            # todo points分支：根据稀疏点云坐标，从TPV三平面特征进行采样，并融合得到点特征：任意位置采样
             # points: bs, n, 3
             _, n, _ = points.shape
             points = points.reshape(bs, 1, n, 3)
-            points[..., 0] = points[..., 0] / (self.tpv_w*self.scale_w) * 2 - 1
+            points[..., 0] = points[..., 0] / (self.tpv_w*self.scale_w) * 2 - 1 # 归一化到[-1,1]
             points[..., 1] = points[..., 1] / (self.tpv_h*self.scale_h) * 2 - 1
             points[..., 2] = points[..., 2] / (self.tpv_z*self.scale_z) * 2 - 1
             sample_loc = points[:, :, :, [0, 1]]
-            tpv_hw_pts = F.grid_sample(tpv_hw, sample_loc).squeeze(2) # bs, c, n
+            tpv_hw_pts = F.grid_sample(tpv_hw, sample_loc).squeeze(2) # bs, c, n # 从TPV 特征进行采样
             sample_loc = points[:, :, :, [1, 2]]
             tpv_zh_pts = F.grid_sample(tpv_zh, sample_loc).squeeze(2)
             sample_loc = points[:, :, :, [2, 0]]
             tpv_wz_pts = F.grid_sample(tpv_wz, sample_loc).squeeze(2)
 
+            # todo-------------------------------------------------#
+            # todo voxel分支：将TPV平面扩展成3D，并进行融合，得到体素特征：规则网格采样
             tpv_hw_vox = tpv_hw.unsqueeze(-1).permute(0, 1, 3, 2, 4).expand(-1, -1, -1, -1, self.scale_z*self.tpv_z)
             tpv_zh_vox = tpv_zh.unsqueeze(-1).permute(0, 1, 4, 3, 2).expand(-1, -1, self.scale_w*self.tpv_w, -1, -1)
             tpv_wz_vox = tpv_wz.unsqueeze(-1).permute(0, 1, 2, 4, 3).expand(-1, -1, -1, self.scale_h*self.tpv_h, -1)
@@ -94,7 +98,7 @@ class TPVAggregator(BaseModule):
             logits = logits.permute(0, 2, 1)
             logits_vox = logits[:, :, :(-n)].reshape(bs, self.classes, self.scale_w*self.tpv_w, self.scale_h*self.tpv_h, self.scale_z*self.tpv_z)
             logits_pts = logits[:, :, (-n):].reshape(bs, self.classes, n, 1, 1)
-            return logits_vox, logits_pts
+            return logits_vox, logits_pts # points ≠ None： 返回逐体素预测+point prediction 体素 和 稀疏点
             
         else:
             tpv_hw = tpv_hw.unsqueeze(-1).permute(0, 1, 3, 2, 4).expand(-1, -1, -1, -1, self.scale_z*self.tpv_z)
@@ -111,4 +115,4 @@ class TPVAggregator(BaseModule):
                 logits = self.classifier(fused)
             logits = logits.permute(0, 4, 1, 2, 3)
         
-            return logits
+            return logits # points = None 只预测 logits(完整3D网格)

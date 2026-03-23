@@ -58,9 +58,9 @@ class TPVFormer(BaseModule):
             B, N, C, H, W = img.size()
             img = img.reshape(B * N, C, H, W)
             if use_grid_mask is None:
-                use_grid_mask = self.use_grid_mask
+                use_grid_mask = self.use_grid_mask # True
             if use_grid_mask:
-                img = self.grid_mask(img)
+                img = self.grid_mask(img) # GridMask：数据增强，用网格将图像遮掉一部分
 
             img_feats = self.img_backbone(img)
             if isinstance(img_feats, dict):
@@ -87,5 +87,5 @@ class TPVFormer(BaseModule):
         """
         img_feats = self.extract_img_feat(img=img, use_grid_mask=use_grid_mask)
         outs = self.tpv_head(img_feats, img_metas)
-        outs = self.tpv_aggregator(outs, points)
+        outs = self.tpv_aggregator(outs, points) # points: (b num_pts 3)
         return outs

@@ -31,9 +31,9 @@ def main(args):
     dataset_config = cfg.dataset_params
 
     if cfg.get('occupancy', False):
-        from builder import tpv_occupancy_builder as model_builder
+        from builder import tpv_occupancy_builder as model_builder # tpvformer04: 占据预测
     else:
-        from builder import tpv_lidarseg_builder as model_builder
+        from builder import tpv_lidarseg_builder as model_builder  # tpvformer10:  语义分割
     
     my_model = model_builder.build(cfg.model).to(device)
     if args.ckpt_path:

@@ -67,7 +67,7 @@ class Grid(object):
         return img, label
 
 
-class GridMask(nn.Module):
+class GridMask(nn.Module): 
     def __init__(self, use_h, use_w, rotate = 1, offset=False, ratio = 0.5, mode=0, prob = 1.):
         super(GridMask, self).__init__()
         self.use_h = use_h
@@ -82,43 +82,43 @@ class GridMask(nn.Module):
     def set_prob(self, epoch, max_epoch):
         self.prob = self.st_prob * epoch / max_epoch #+ 1.#0.5
     @auto_fp16()
-    def forward(self, x):
+    def forward(self, x): # 数据增强,用网格把图像遮挡一部分
         if np.random.rand() > self.prob or not self.training:
-            return x
+            return x # 训练时启用，且按概率触发
         n,c,h,w = x.size()
         x = x.view(-1,h,w)
         hh = int(1.5*h)
         ww = int(1.5*w)
         d = np.random.randint(2, h)
         self.l = min(max(int(d*self.ratio+0.5),1),d-1)
-        mask = np.ones((hh, ww), np.float32)
+        mask = np.ones((hh, ww), np.float32) # todo 构造mask
         st_h = np.random.randint(d)
         st_w = np.random.randint(d)
-        if self.use_h:
+        if self.use_h: 
             for i in range(hh//d):
                 s = d*i + st_h
                 t = min(s+self.l, hh)
-                mask[s:t,:] *= 0
+                mask[s:t,:] *= 0 # 横条
         if self.use_w:
             for i in range(ww//d):
                 s = d*i + st_w
                 t = min(s+self.l, ww)
-                mask[:,s:t] *= 0
+                mask[:,s:t] *= 0 # 竖条
        
         r = np.random.randint(self.rotate)
         mask = Image.fromarray(np.uint8(mask))
-        mask = mask.rotate(r)
+        mask = mask.rotate(r) # 随机旋转：防止模型只适应固定方向
         # mask = np.asarray(mask)
         mask = np.array(mask)
         mask = mask[(hh-h)//2:(hh-h)//2+h, (ww-w)//2:(ww-w)//2+w]
 
         mask = torch.from_numpy(mask).to(x.dtype).cuda()
-        if self.mode == 1:
+        if self.mode == 1: 
             mask = 1-mask
         mask = mask.expand_as(x)
-        if self.offset:
+        if self.offset: # 可选offset(更强扰动)
             offset = torch.from_numpy(2 * (np.random.rand(h,w) - 0.5)).to(x.dtype).cuda()
-            x = x * mask + offset * (1 - mask)
+            x = x * mask + offset * (1 - mask) # 被遮挡的地方使用随机值填充
         else:
             x = x * mask 
         
