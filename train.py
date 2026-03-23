@@ -21,7 +21,7 @@ warnings.filterwarnings("ignore")
 def pass_print(*args, **kwargs):
     pass
 
-def main(local_rank, args):
+def main(args,local_rank=0):
     # global settings
     torch.backends.cudnn.benchmark = True
 
@@ -38,25 +38,26 @@ def main(local_rank, args):
     max_num_epochs = cfg.max_epochs
     grid_size = cfg.grid_size
 
-    # init DDP
-    distributed = True
-    ip = os.environ.get("MASTER_ADDR", "127.0.0.1")
-    port = os.environ.get("MASTER_PORT", "20506")
-    hosts = int(os.environ.get("WORLD_SIZE", 1))  # number of nodes
-    rank = int(os.environ.get("RANK", 0))  # node id
-    gpus = torch.cuda.device_count()  # gpus per node
-    print(f"tcp://{ip}:{port}")
-    dist.init_process_group(
-        backend="nccl", init_method=f"tcp://{ip}:{port}", 
-        world_size=hosts * gpus, rank=rank * gpus + local_rank
-    )
-    world_size = dist.get_world_size()
-    cfg.gpu_ids = range(world_size)
-    torch.cuda.set_device(local_rank)
+    distributed = False
+    # # init DDP
+    # distributed = True
+    # ip = os.environ.get("MASTER_ADDR", "127.0.0.1")
+    # port = os.environ.get("MASTER_PORT", "20506")
+    # hosts = int(os.environ.get("WORLD_SIZE", 1))  # number of nodes
+    # rank = int(os.environ.get("RANK", 0))  # node id
+    # gpus = torch.cuda.device_count()  # gpus per node
+    # print(f"tcp://{ip}:{port}")
+    # dist.init_process_group(
+    #     backend="nccl", init_method=f"tcp://{ip}:{port}", 
+    #     world_size=hosts * gpus, rank=rank * gpus + local_rank
+    # )
+    # world_size = dist.get_world_size()
+    # cfg.gpu_ids = range(world_size)
+    # torch.cuda.set_device(local_rank)
 
-    if dist.get_rank() != 0:
-        import builtins
-        builtins.print = pass_print
+    # if dist.get_rank() != 0:
+    #     import builtins
+    #     builtins.print = pass_print
 
     # configure logger
     if dist.get_rank() == 0:
@@ -77,16 +78,19 @@ def main(local_rank, args):
     my_model = model_builder.build(cfg.model)
     n_parameters = sum(p.numel() for p in my_model.parameters() if p.requires_grad)
     logger.info(f'Number of params: {n_parameters}')
-    if distributed:
-        find_unused_parameters = cfg.get('find_unused_parameters', False)
-        ddp_model_module = torch.nn.parallel.DistributedDataParallel
-        my_model = ddp_model_module(
-            my_model.cuda(),
-            device_ids=[torch.cuda.current_device()],
-            broadcast_buffers=False,
-            find_unused_parameters=find_unused_parameters)
-    else:
-        my_model = my_model.cuda()
+    
+    # if distributed:
+    #     find_unused_parameters = cfg.get('find_unused_parameters', False)
+    #     ddp_model_module = torch.nn.parallel.DistributedDataParallel
+    #     my_model = ddp_model_module(
+    #         my_model.cuda(),
+    #         device_ids=[torch.cuda.current_device()],
+    #         broadcast_buffers=False,
+    #         find_unused_parameters=find_unused_parameters)
+    # else:
+    #     my_model = my_model.cuda()
+    
+    my_model = my_model.cuda()
     print('done ddp model')
 
     # generate datasets
@@ -128,13 +132,13 @@ def main(local_rank, args):
     best_val_miou_pts, best_val_miou_vox = 0, 0
     global_iter = 0
 
-    cfg.resume_from = ''
-    if osp.exists(osp.join(args.work_dir, 'latest.pth')):
-        cfg.resume_from = osp.join(args.work_dir, 'latest.pth')
-    if args.resume_from:
-        cfg.resume_from = args.resume_from
+    # cfg.resume_from = ''
+    # if osp.exists(osp.join(args.work_dir, 'latest.pth')):
+    #     cfg.resume_from = osp.join(args.work_dir, 'latest.pth')
+    # if args.resume_from:
+    #     cfg.resume_from = args.resume_from
     
-    print('resume from: ', cfg.resume_from)
+    # print('resume from: ', cfg.resume_from)
     print('work dir: ', args.work_dir)
 
     if cfg.resume_from and osp.exists(cfg.resume_from):
@@ -326,4 +330,5 @@ if __name__ == '__main__':
     args.gpus = ngpus
     print(args)
 
-    torch.multiprocessing.spawn(main, args=(args,), nprocs=args.gpus)
+    # torch.multiprocessing.spawn(main, args=(args,), nprocs=args.gpus)
+    main(args=args)

@@ -1,0 +1,34 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "lidarseg eval",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/eval.py",
+            "args": [
+                "--py-config", "/vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/config/tpv_lidarseg_custom.py",
+                // "--work-dir", "/vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/tpvformer/outpus", 
+                "--ckpt-path", "/c20250502/wangyushen/Weights/tpvformer/tpv10_lidarseg_v2.pth",
+                     
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "occpancy eval",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/eval.py",
+            "args": [
+                "--py-config", "/vepfs-mlp2/c20250502/haoce/wangyushen/TPVFormer/config/tpv04_occupancy_custom.py",
+                // "--work-dir", "/vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/tpvformer/outpus", 
+                "--ckpt-path", "/c20250502/wangyushen/Weights/tpvformer/tpv04_occupancy_v2_no_ddp.pth",
+                     
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}

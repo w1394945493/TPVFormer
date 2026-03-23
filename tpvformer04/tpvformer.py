@@ -86,6 +86,6 @@ class TPVFormer(BaseModule):
         """Forward training function.
         """
         img_feats = self.extract_img_feat(img=img, use_grid_mask=use_grid_mask)
-        outs = self.tpv_head(img_feats, img_metas)
-        outs = self.tpv_aggregator(outs, points)
+        outs = self.tpv_head(img_feats, img_metas) # tpv_head
+        outs = self.tpv_aggregator(outs, points) # tpv_aggregator
         return outs

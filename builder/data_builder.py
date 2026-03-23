@@ -18,6 +18,8 @@ def build(dataset_config,
     label_mapping = dataset_config["label_mapping"]
 
     nusc = NuScenes(version=version, dataroot=data_path, verbose=True)
+    # todo -----------------------------#
+    # todo 数据集
     train_dataset = ImagePoint_NuScenes(data_path, imageset=train_imageset,
                                      label_mapping=label_mapping, nusc=nusc)
     val_dataset = ImagePoint_NuScenes(data_path, imageset=val_imageset,

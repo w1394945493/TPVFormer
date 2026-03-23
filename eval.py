@@ -1,5 +1,6 @@
 
 import os, time, argparse, os.path as osp, numpy as np
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import torch
 import torch.distributed as dist
 
@@ -18,7 +19,7 @@ warnings.filterwarnings("ignore")
 def pass_print(*args, **kwargs):
     pass
 
-def main(local_rank, args):
+def main(args,local_rank=0):
     # global settings
     torch.backends.cudnn.benchmark = True
 
@@ -35,25 +36,26 @@ def main(local_rank, args):
 
     grid_size = cfg.grid_size
 
+    distributed = False
     # init DDP
-    distributed = True
-    ip = os.environ.get("MASTER_ADDR", "127.0.0.1")
-    port = os.environ.get("MASTER_PORT", "20506")
-    hosts = int(os.environ.get("WORLD_SIZE", 1))  # number of nodes
-    rank = int(os.environ.get("RANK", 0))  # node id
-    gpus = torch.cuda.device_count()  # gpus per node
-    print(f"tcp://{ip}:{port}")
-    dist.init_process_group(
-        backend="nccl", init_method=f"tcp://{ip}:{port}", 
-        world_size=hosts * gpus, rank=rank * gpus + local_rank
-    )
-    world_size = dist.get_world_size()
-    cfg.gpu_ids = range(world_size)
-    torch.cuda.set_device(local_rank)
+    # distributed = True
+    # ip = os.environ.get("MASTER_ADDR", "127.0.0.1")
+    # port = os.environ.get("MASTER_PORT", "20506")
+    # hosts = int(os.environ.get("WORLD_SIZE", 1))  # number of nodes
+    # rank = int(os.environ.get("RANK", 0))  # node id
+    # gpus = torch.cuda.device_count()  # gpus per node
+    # print(f"tcp://{ip}:{port}")
+    # dist.init_process_group(
+    #     backend="nccl", init_method=f"tcp://{ip}:{port}", 
+    #     world_size=hosts * gpus, rank=rank * gpus + local_rank
+    # )
+    # world_size = dist.get_world_size()
+    # cfg.gpu_ids = range(world_size)
+    # torch.cuda.set_device(local_rank)
 
-    if dist.get_rank() != 0:
-        import builtins
-        builtins.print = pass_print
+    # if dist.get_rank() != 0:
+    #     import builtins
+    #     builtins.print = pass_print
 
     logger = get_root_logger(log_file=None, log_level='INFO')
     logger.info(f'Config:\n{cfg.pretty_text}')
@@ -67,18 +69,37 @@ def main(local_rank, args):
     my_model = model_builder.build(cfg.model)
     n_parameters = sum(p.numel() for p in my_model.parameters() if p.requires_grad)
     logger.info(f'Number of params: {n_parameters}')
-    if distributed:
-        find_unused_parameters = cfg.get('find_unused_parameters', False)
-        ddp_model_module = torch.nn.parallel.DistributedDataParallel
-        my_model = ddp_model_module(
-            my_model.cuda(),
-            device_ids=[torch.cuda.current_device()],
-            broadcast_buffers=False,
-            find_unused_parameters=find_unused_parameters)
-    else:
-        my_model = my_model.cuda()
-    print('done ddp model')
+    # if distributed:
+    #     find_unused_parameters = cfg.get('find_unused_parameters', False)
+    #     ddp_model_module = torch.nn.parallel.DistributedDataParallel
+    #     my_model = ddp_model_module(
+    #         my_model.cuda(),
+    #         device_ids=[torch.cuda.current_device()],
+    #         broadcast_buffers=False,
+    #         find_unused_parameters=find_unused_parameters)
+    # else:
+    #     my_model = my_model.cuda()
+    
+    # print('done ddp model')
+    
+    my_model = my_model.cuda()
+    
+    # resume and load
+    assert osp.isfile(args.ckpt_path)
+    cfg.resume_from = args.ckpt_path
+    print('ckpt path:', cfg.resume_from)
 
+    map_location = 'cpu'
+    ckpt = torch.load(cfg.resume_from, map_location=map_location)
+    
+    if 'state_dict' in ckpt:
+        ckpt = ckpt['state_dict']
+    if not distributed:
+        ckpt = {k.replace('module.', ''): v for k, v in ckpt.items()} # 保存模型按
+    
+    print(my_model.load_state_dict(ckpt, strict=True))
+    print(f'successfully loaded ckpt')
+    
     # generate datasets
     SemKITTI_label_name = get_nuScenes_label_name(dataset_config["label_mapping"])
     unique_label = np.asarray(cfg.unique_label)
@@ -105,18 +126,6 @@ def main(local_rank, args):
     CalMeanIou_vox = MeanIoU(unique_label, ignore_label, unique_label_str, 'vox')
     CalMeanIou_pts = MeanIoU(unique_label, ignore_label, unique_label_str, 'pts')
     
-    # resume and load
-    assert osp.isfile(args.ckpt_path)
-    cfg.resume_from = args.ckpt_path
-    print('ckpt path:', cfg.resume_from)
-
-    map_location = 'cpu'
-    ckpt = torch.load(cfg.resume_from, map_location=map_location)
-    if 'state_dict' in ckpt:
-        ckpt = ckpt['state_dict']
-    print(my_model.load_state_dict(revise_ckpt(ckpt), strict=False))
-    print(f'successfully loaded ckpt')
-
     print_freq = cfg.print_freq
                 
     # eval
@@ -129,12 +138,12 @@ def main(local_rank, args):
         for i_iter_val, (imgs, img_metas, val_vox_label, val_grid, val_pt_labs) in enumerate(val_dataset_loader):
             
             imgs = imgs.cuda()
-            val_grid_float = val_grid.to(torch.float32).cuda()
+            val_grid_float = val_grid.to(torch.float32).cuda() # 加载了points
             val_grid_int = val_grid.to(torch.long).cuda()
             vox_label = val_vox_label.type(torch.LongTensor).cuda()
             val_pt_labs = val_pt_labs.cuda()
 
-            predict_labels_vox, predict_labels_pts = my_model(img=imgs, img_metas=img_metas, points=val_grid_float)
+            predict_labels_vox, predict_labels_pts = my_model(img=imgs, img_metas=img_metas, points=val_grid_float) # (1 17 200 200 16) (1 17 num_points 1 1)
             if cfg.lovasz_input == 'voxel':
                 lovasz_input = predict_labels_vox
                 lovasz_label = vox_label
@@ -191,4 +200,5 @@ if __name__ == '__main__':
     args.gpus = ngpus
     print(args)
 
-    torch.multiprocessing.spawn(main, args=(args,), nprocs=args.gpus)
+    # torch.multiprocessing.spawn(main, args=(args,), nprocs=args.gpus)
+    main(args=args)
