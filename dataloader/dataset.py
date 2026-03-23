@@ -36,13 +36,13 @@ class ImagePoint_NuScenes(data.Dataset):
             )
 
         lidar_sd_token = self.nusc.get('sample', info['token'])['data']['LIDAR_TOP']
-        lidarseg_labels_filename = os.path.join(self.data_path, self.nusc.get('lidarseg', lidar_sd_token)['filename'])
+        lidarseg_labels_filename = os.path.join(self.data_path, self.nusc.get('lidarseg', lidar_sd_token)['filename']) # 激光点云分割标注
         points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8).reshape([-1, 1]) 
         points_label = np.vectorize(self.learning_map.__getitem__)(points_label) # (n,1)
         
         # lidar_path = info['lidar_path']
         lidar_path = info['lidar_path'].replace('./data/nuscenes/',self.data_path)      
-        points = np.fromfile(lidar_path, dtype=np.float32, count=-1).reshape([-1, 5]) # (n,5)
+        points = np.fromfile(lidar_path, dtype=np.float32, count=-1).reshape([-1, 5]) # (n,5) # 激光点云坐标
 
         data_tuple = (imgs, img_metas, points[:, :3], points_label.astype(np.uint8))
         return data_tuple
